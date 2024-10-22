@@ -2,7 +2,7 @@ from django.shortcuts import render
 from rest_framework.decorators import api_view
 import json
 from django.http import HttpResponse
-from ytToText.settings import sendResponse
+from ytToText.settings import *
 # Create your views here.
 from youtube_transcript_api import YouTubeTranscriptApi as yta
 import re
@@ -28,30 +28,51 @@ def index(request):
     resp = sendResponse(request,200, f"{final_tra}", action)
     return HttpResponse(resp)
 
-# @api_view(['POST', 'GET'])
-# def bookadd(request):
-#     action = 'bookadd'
-#     jsons = json.loads(request.body)
-#     bname = jsons.get('bname','nokey')
-#     author = jsons.get('author','nokey')
-#     btype = jsons.get('btype','nokey')
-   
-#     con = connect()
-#     cursor = con.cursor()
 
-#     try: 
-#         cursor.execute(f"SELECT * FROM t_book WHERE bname = '{bname}' AND author = '{author}' AND btype = '{btype}'")
-#         existing_bookadd = cursor.fetchone()
-#         if existing_bookadd:
-#             resp = sendResponse(request,400, f"{bname} ном бүртгэгдсэн байна", action)
-#         else:
-#             cursor.execute(f"""INSERT INTO t_book(bname, author, btype) VALUES('{bname}', '{author}', '{btype}')""")
-#             con.commit()
-#             resp= sendResponse(request,200, f"{bname} номыг бүртгэлээ", action)
+def register(request):
+    jsons = json.loads(request.body)
+    action = jsons['action']
+    username = jsons['username']
+    email = jsons['email']
+    password = jsons['password']
 
-#         return HttpResponse(resp)
-#     except Exception as e:
-#         # Handle database errors
-#         error_message = "Database error: " + str(e)
-#         resp = sendResponse(request,500, error_message, action)
-#         return HttpResponse(resp)
+    myCon = connectDB()
+    cursor = myCon.cursor()
+    
+    query = F"""SELECT COUNT(*) AS usercount FROM t_user 
+            WHERE email = '{email}' AND enabled = 1"""
+    
+    cursor.execute(query)
+    columns = cursor.description
+    respRow = [{columns[index][0]:column for index, 
+        column in enumerate(value)} for value in cursor.fetchall()]
+    cursor.close()
+
+    if respRow[0]['usercount'] == 1:
+        data = [{'email':email}]
+        resp = sendResponse(request, 1000, data, action)
+    else:
+        token = generateStr(12)
+        query = F"""INSERT INTO public.t_user(
+	email, lastname, firstname, passw, regdate, enabled, token, tokendate)
+	VALUES ('{email}', '{lastname}', '{firstname}', '{passw}'
+    , NOW(), 0, '{token}', NOW() + interval \'1 day\');"""
+        cursor1 = myCon.cursor()
+        cursor1.execute(query)
+        myCon.commit()
+        cursor1.close()
+        data = [{'email':email, 'firstname':firstname, 'lastname': lastname}]
+        resp = sendResponse(request, 1001, data, action)
+        
+
+        sendMail(email, "Verify your email", F"""
+                <html>
+                <body>
+                    <p>Ta amjilttai burtguulle. Doorh link deer darj burtgelee batalgaajuulna uu. Hervee ta manai sited burtguuleegui bol ene mailiig ustgana uu.</p>
+                    <p> <a href="http://localhost:8001/check/?token={token}">Batalgaajuulalt</a> </p>
+                </body>
+                </html>
+                """)
+
+    return resp
+# 
