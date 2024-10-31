@@ -4,8 +4,109 @@ import json
 from django.http import HttpResponse
 from ytToText.settings import *
 # Create your views here.
-from youtube_transcript_api import YouTubeTranscriptApi as yta
+from w import YouTubeTranscriptApi as yta
 import re
+import requests
+from django.conf import settings
+from youtube_transcript_api import YouTubeTranscriptApi
+from .models import ConvertedVideo
+
+
+
+# your_app/views.py
+
+from datetime import timedelta
+from django.contrib.auth.models import User
+from rest_framework import generics, status
+from rest_framework.response import Response
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
+from django.contrib.auth import authenticate
+
+# User registration
+@api_view(['POST'])
+def register_view(request):
+    if request.method == "POST":
+        username = request.data.get("username")
+        email = request.data.get("email")
+        password = request.data.get("password")
+
+        # Check if username already exists
+        if User.objects.filter(username=username).exists():
+            return Response({"error": "Username already exists"}, status=400)
+
+        # Create new user
+        user = User.objects.create_user(username=username,email=email, password=password)
+        return Response({"message": "User registered successfully"}, status=201)
+
+# Custom token obtain view (login)
+class MyTokenObtainPairView(TokenObtainPairView):
+    pass
+
+# Token refresh view
+class MyTokenRefreshView(TokenRefreshView):
+    pass
+
+# Example of a protected view
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def protected_view(request):
+    return Response({"message": "You are authenticated!"})
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def convert_video_view(request):
+    video_url = request.data.get("video_url")
+    if not video_url:
+        return Response({"error": "Video URL is required"}, status=400)
+
+    try:
+        video_id = video_url.split("v=")[-1]
+        transcript = YouTubeTranscriptApi.get_transcript(video_id)
+        converted_text = " ".join([t["text"] for t in transcript])
+
+        converted_video = ConvertedVideo.objects.create(
+            user=request.user,
+            video_url=video_url,
+            converted_text=converted_text
+        )
+        return Response({"message": "Video converted successfully", "converted_text": converted_text}, status=201)
+    except Exception as e:
+        return Response({"error": str(e)}, status=400)
+
+# Get conversion history
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def conversion_history_view(request):
+    history = ConvertedVideo.objects.filter(user=request.user)
+    history_data = [
+        {
+            "video_url": item.video_url,
+            "converted_text": item.converted_text,
+            "created_at": item.created_at
+        }
+        for item in history
+    ]
+    return Response({"history": history_data}, status=200)
+    history = ConvertedVideo.objects.filter(user=request.user)
+    history_data = [
+        {
+            "video_url": item.video_url,
+            "title": item.title,
+            "thumbnail_url": item.thumbnail_url,
+            "converted_text": item.converted_text,
+            "created_at": item.created_at
+        }
+        for item in history
+    ]
+    return Response({"history": history_data}, status=200)
+
+
+
+
+
+
 @api_view(['POST', 'GET'])
 def index(request):
     action = "req"
@@ -29,7 +130,7 @@ def index(request):
     return HttpResponse(resp)
 
 
-def register(request):
+# def register(request):
     jsons = json.loads(request.body)
     action = jsons['action']
     username = jsons['username']

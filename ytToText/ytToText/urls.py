@@ -16,8 +16,16 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path
-from app.views import index
+from app.views import *
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('', index)
+    path('', index),
+    path('register/', register_view, name='register'),
+    path('login/', MyTokenObtainPairView.as_view(), name='token_obtain_pair'),
+    path('refresh/', MyTokenRefreshView.as_view(), name='token_refresh'),
+    path('protected/', protected_view, name='protected'), 
+    path('convert-video/', convert_video_view, name='convert_video'),
+
+    # Get conversion history
+    path('conversion-history/', conversion_history_view, name='conversion_history'),
 ]
