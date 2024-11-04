@@ -4,7 +4,6 @@ import json
 from django.http import HttpResponse
 from ytToText.settings import *
 # Create your views here.
-from w import YouTubeTranscriptApi as yta
 import re
 import requests
 from django.conf import settings

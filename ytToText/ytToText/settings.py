@@ -13,7 +13,6 @@ https://docs.djangoproject.com/en/5.0/ref/settings/
 from pathlib import Path
 import json
 from datetime import datetime
-import psycopg2
 from datetime import timedelta
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -145,23 +144,7 @@ STATIC_URL = 'static/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# db connection
-def connectDB():
-    con = psycopg2.connect (
-        # host = '192.168.0.15',
-        host = '59.153.86.251',
-        dbname = 'qrOwl',
-        user = 'userowl',
-        password = 'Owl1234@',
-        port = '5938',
-    )
-    return con
-# connectDB
 
-# DB disconnect hiij baina
-def disconnectDB(con):
-    con.close()
-# disconnectDB
 
 
 def sendResponse(request, resultCode, data, action="no action"):
