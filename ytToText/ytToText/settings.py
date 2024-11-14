@@ -145,31 +145,3 @@ STATIC_URL = 'static/'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 
-
-
-def sendResponse(request, resultCode, data, action="no action"):
-    response = {}
-    response["resultCode"] = resultCode
-    response["resultMessage"] = resultMessages[resultCode]
-    response["data"] = data
-    response["size"] = len(data)
-    response["action"] = action
-    response["curdate"] = datetime.now().strftime('%Y/%m/%d %H:%M:%S')
-
-
-    return json.dumps(response, indent=4, sort_keys=True, default=str)
-#   sendResponse
-
-#Messages
-resultMessages = {
-    200:"Success",
-    404:"Not found",
-    1000 : "Burtgeh bolomjgui. Mail hayag umnu burtgeltei baina",
-    1001 : "Hereglegch Amjilttai burtgegdlee. Batalgaajuulah mail ilgeegdlee. 24 tsagiin dotor batalgaajuulna.",
-    1002 : "Login Successful",
-    1003 : "Amjilttai batalgaajlaa",
-    1004 : "Hereglegchiin ner, nuuts ug buruu baina.",
-    3001 : "ACTION BURUU",
-    3002 : "METHOD BURUU",
-    3003 : "JSON BURUU",
-} 
